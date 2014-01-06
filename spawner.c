@@ -17,9 +17,11 @@ static struct {
     char command[1024];
     char *args[1024];
     unsigned int concurrency;
+    unsigned char daemon_mode;
 } config = {
     .command = "",
     .concurrency = 4,
+    .daemon_mode = 0,
 };
 int keepgoing = 1;
 
@@ -30,7 +32,7 @@ static void catch_stop(int signo)
 
 static void print_help(const char *prg)
 {
-    fprintf(stdout, "%s [-h] [-c concurrency] {command line}\n", 
+    fprintf(stdout, "%s [-h] [-d] [-c concurrency] {command line}\n", 
                     prg);
 }
 
@@ -51,6 +53,9 @@ static void parse_options(int argc, char *argv[])
             else if (strcmp(argv[i], "-h") == 0) {
                 print_help(argv[0]);
                 exit(0);
+            }
+            else if (strcmp(argv[i], "-d") == 0) {
+                config.daemon_mode = 1;
             }
             else {
                 // unknown option
@@ -84,6 +89,15 @@ int main(int argc, char *argv[])
 {
     set_log_level(LOG_DEBUG);
     parse_options(argc, argv);
+
+    if (config.daemon_mode == 1) {
+        int nochdir = 1;
+        int noclose = 0;
+        if (daemon(nochdir, noclose) == -1) {
+            print_log(LOG_ERR, "failed to launch daemon.\n");
+            exit(-1);
+        }
+    }
 
     process_init(config.concurrency);
     keepgoing = 1;

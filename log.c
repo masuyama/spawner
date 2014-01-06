@@ -1,8 +1,8 @@
-#include "log.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <pthread.h>
+
+#include "log.h"
 
 static int log_level = 0;
 
@@ -16,7 +16,7 @@ int set_log_level(int new_level)
 static int write_log_v(int priority, const char* fmt, va_list arg)
 {
     char    buffer[8192];
-    int    len;
+    int     len;
     size_t  size;
     va_list aq;
     va_copy(aq, arg);
@@ -25,13 +25,11 @@ static int write_log_v(int priority, const char* fmt, va_list arg)
     len = vsnprintf(buffer, size, fmt, aq);
     va_end(aq);
 
-    if ((buffer[len - 1] != '\n') && ((len + 1) < (int)size))
-    {
+    if ((buffer[len - 1] != '\n') && ((len + 1) < (int)size)) {
         buffer[len] = '\n';
         buffer[len + 1] = '\0';
     }
 
-//    fprintf(stdout, "%1d>[%u] %s", priority, (unsigned int)pthread_self(), buffer);
     fprintf(stdout, "%1d> %s", priority, buffer);
     fflush(stdout);
 

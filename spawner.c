@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include "process.h"
 #include "log.h"
@@ -21,6 +22,11 @@ static struct {
     .concurrency = 4,
 };
 int keepgoing = 1;
+
+static void catch_stop(int signo)
+{
+    keepgoing = 0;
+}
 
 static void print_help(const char *prg)
 {
@@ -81,6 +87,10 @@ int main(int argc, char *argv[])
 
     process_init(config.concurrency);
     keepgoing = 1;
+
+    signal(SIGINT, catch_stop);
+    signal(SIGTERM, catch_stop);
+
     while (keepgoing) {
         process_session(config.command, config.args);
     }

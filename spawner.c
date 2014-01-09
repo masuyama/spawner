@@ -27,7 +27,23 @@ int keepgoing = 1;
 
 static void catch_stop(int signo)
 {
+    print_log(LOG_INFO, "catch_stop : %d\n", signo);
     keepgoing = 0;
+    process_signal(signo);
+}
+
+static void catch_hup(int signo)
+{
+}
+
+static void set_signal(int signo, void (*func)(int signo))
+{
+    struct sigaction act;
+    act.sa_handler = func;
+    sigemptyset(&act.sa_mask);
+    sigaddset(&act.sa_mask, signo);
+    act.sa_flags = 0;
+    sigaction(signo, &act, NULL);
 }
 
 static void print_help(const char *prg)
@@ -90,6 +106,11 @@ int main(int argc, char *argv[])
     set_log_level(LOG_DEBUG);
     parse_options(argc, argv);
 
+    set_signal(SIGINT, catch_stop);
+    set_signal(SIGTERM, catch_stop);
+    set_signal(SIGQUIT, catch_stop);
+    set_signal(SIGHUP, catch_hup);
+
     if (config.daemon_mode == 1) {
         int nochdir = 1;
         int noclose = 0;
@@ -98,16 +119,17 @@ int main(int argc, char *argv[])
             exit(-1);
         }
     }
-
+    
     process_init(config.concurrency);
     keepgoing = 1;
-
-    signal(SIGINT, catch_stop);
-    signal(SIGTERM, catch_stop);
 
     while (keepgoing) {
         process_session(config.command, config.args);
     }
+
+    process_release();
+
+    print_log(LOG_INFO, "spawner end\n");
 
     exit(0);
 }

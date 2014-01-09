@@ -5,6 +5,7 @@
 #include "log.h"
 
 static int log_level = 0;
+static FILE *out = NULL;
 
 int set_log_level(int new_level)
 {
@@ -30,8 +31,11 @@ static int write_log_v(int priority, const char* fmt, va_list arg)
         buffer[len + 1] = '\0';
     }
 
-    fprintf(stdout, "%1d> %s", priority, buffer);
-    fflush(stdout);
+    if (out == NULL) {
+        out = stdout;
+    }
+    fprintf(out, "%1d> %s", priority, buffer);
+    fflush(out);
 
     return 1;
 }

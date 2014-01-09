@@ -14,9 +14,9 @@ typedef struct _spawner_process {
     pid_t   pid;
 } spawner_process_t;
 
-spawner_process_t   *process_list = NULL;
-unsigned int        num_process = 0;
-unsigned int        running_process = 0;
+static spawner_process_t    *process_list = NULL;
+static unsigned int         num_process = 0;
+static unsigned int         running_process = 0;
 
 static spawner_process_t * find_free_slot(void)
 {
@@ -140,6 +140,20 @@ void process_session(const char *command, char *args[])
     else {
         // 何もしない
         usleep(10000);
+    }
+}
+
+void process_signal(int sig)
+{
+    int i;
+    spawner_process_t *p = NULL;
+    for (i = 0, p = process_list ; i < num_process ; i++, p++) {
+        if (p->pid == -1) {
+            // 無効なプロセス
+            continue;
+        }
+        print_log(LOG_INFO, "signal[%d] to %u\n", sig, (unsigned int)p->pid);
+        kill(p->pid, sig);
     }
 }
 
